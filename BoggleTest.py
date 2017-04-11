@@ -60,14 +60,60 @@
 #  in to live production code.
 
 import sys
+import argparse
 
-def run_boggle_game():
-    if len(sys.argv) != 4:
-        print "Usage: BoggleTest <dictionary_filename> <board_filename> <output_filename>"
-        sys.exit(1)
+def main():
+    args = parse_arguments()
+
+    run_boggle_game(args)
 
     sys.exit(0)
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Play Boggle.")
+    parser.add_argument("dictionary_filename")
+    parser.add_argument("board_filename")
+    parser.add_argument("output_filename")
+    args = parser.parse_args()
+    return args
+
+
+def run_boggle_game(args):
+    player = BogglePlayer()
+    player.know_thy_words(args.dictionary_filename)
+    player.observe_ye_board(args.board_filename)
+
+    scoresheet = player.play_boggle()
+    scoresheet.alphabetize().dedupe().write_down(args.output_filename)
+
+
+class BogglePlayer:
+
+    def know_thy_words(self, filename):
+        print "Learning words from %s..." % filename
+
+    def observe_ye_board(self, filename):
+        print "Looking at board from %s..." % filename
+
+    def play_boggle(self):
+        print "Playing Boggle!"
+        return Scoresheet()
+
+
+class Scoresheet:
+
+    def dedupe(self):
+        print "Deduping..."
+        return self
+
+    def alphabetize(self):
+        print "Alphabetizing..."
+        return self
+
+    def write_down(self, filename):
+        print "Writing answers to %s..." % filename
+
+
 if __name__ == '__main__':
-    run_boggle_game()
+    main()
