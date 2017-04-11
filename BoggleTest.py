@@ -85,34 +85,59 @@ def run_boggle_game(args):
     player.observe_ye_board(args.board_filename)
 
     scoresheet = player.play_boggle()
-    scoresheet.alphabetize().dedupe().write_down(args.output_filename)
+    scoresheet.dedupe_and_alphabetize().write_down(args.output_filename)
 
 
 class BogglePlayer:
+    __words_known_by_first_two_letters = {}
 
     def know_thy_words(self, filename):
         print "Learning words from %s..." % filename
+        dictionary = open(filename)
+        for line in dictionary:
+            word = line.strip()
+            self.learn_word(word)
+        dictionary.close()
+
+    def learn_word(self, word):
+        print 'Learned "%s"' % word
 
     def observe_ye_board(self, filename):
         print "Looking at board from %s..." % filename
+        board = open(filename)
+        rows = board.readlines()
+        board.close()
+        print rows
 
     def play_boggle(self):
         print "Playing Boggle!"
-        return Scoresheet()
+        pad = Scoresheet()
+        pad.jot("foo")
+        pad.jot("bar")
+        pad.jot("foo")
+        return pad
 
 
 class Scoresheet:
+    __lines = []
 
-    def dedupe(self):
+    def jot(self, line):
+        self.__lines.append(line)
+
+    def dedupe_and_alphabetize(self):
+        print self.__lines
         print "Deduping..."
-        return self
-
-    def alphabetize(self):
+        lines = list(set(self.__lines))
+        print lines
         print "Alphabetizing..."
+        lines.sort()
+        print lines
+        self.__lines = lines
         return self
 
     def write_down(self, filename):
         print "Writing answers to %s..." % filename
+        print self.__lines
 
 
 if __name__ == '__main__':
