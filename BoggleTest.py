@@ -60,9 +60,14 @@
 #  in to live production code.
 
 import sys
-if __name__ == '__main__':
+
+def run_boggle_game():
     if len(sys.argv) != 4:
         print "Usage: BoggleTest <dictionary_filename> <board_filename> <output_filename>"
         sys.exit(1)
 
     sys.exit(0)
+
+
+if __name__ == '__main__':
+    run_boggle_game()
