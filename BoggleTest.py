@@ -61,6 +61,7 @@
 
 import sys
 import argparse
+import re
 
 def main():
     args = parse_arguments()
@@ -93,20 +94,38 @@ class BogglePlayer:
 
     def know_thy_words(self, filename):
         print "Learning words from %s..." % filename
+        learned = 0
+        skipped = 0
         dictionary = open(filename)
         for line in dictionary:
             word = line.strip()
-            self.learn_word(word)
+            if self.learn(word):
+                learned += 1
+            else:
+                skipped += 1
         dictionary.close()
+        print "Learned %d words (ignored %d short words)" % (learned, skipped)
 
-    def learn_word(self, word):
-        print 'Learned "%s"' % word
+    def learn(self, word):
+        if len(word) < 3:
+            return False
+
+        key = word[:2]
+        if not key in self.__words_known_by_first_two_letters:
+            self.__words_known_by_first_two_letters[key] = []
+        if not word in self.__words_known_by_first_two_letters[key]:
+            self.__words_known_by_first_two_letters[key].append(word)
+
+        return True
 
     def observe_ye_board(self, filename):
         print "Looking at board from %s..." % filename
         board = open(filename)
-        rows = board.readlines()
+        lines = board.readlines()
         board.close()
+        rows = []
+        for line in lines:
+            rows.append(re.sub("[^a-zA-Z]", '', line))
         print rows
 
     def play_boggle(self):
