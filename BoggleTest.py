@@ -92,10 +92,15 @@ def run_boggle_game(args):
 class BogglePlayer:
     __words_known_by_first_two_letters = {}
 
+    _AN_INDISPENSABLE_WORD = "pirate"
+
     def know_thy_words(self, filename):
         print "Learning words from %s..." % filename
+
         learned = 0
         skipped = 0
+        seems_legit = False
+
         dictionary = open(filename)
         for line in dictionary:
             word = line.strip()
@@ -103,7 +108,13 @@ class BogglePlayer:
                 learned += 1
             else:
                 skipped += 1
+            if word == self._AN_INDISPENSABLE_WORD:
+                seems_legit = True
         dictionary.close()
+
+        if not seems_legit:
+            print "WARN: this dictionary doesn't seem to include '%s'." % self._AN_INDISPENSABLE_WORD
+
         print "Learned %d words (ignored %d short words)" % (learned, skipped)
 
     def learn(self, word):
@@ -131,9 +142,12 @@ class BogglePlayer:
     def play_boggle(self):
         print "Playing Boggle!"
         pad = Scoresheet()
-        pad.jot("foo")
-        pad.jot("bar")
-        pad.jot("foo")
+        pad.jot("day")
+        pad.jot("die")
+        pad.jot("home")
+        pad.jot("kid")
+        pad.jot("rid")
+        pad.jot("way")
         return pad
 
 
