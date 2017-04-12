@@ -91,62 +91,12 @@ def run_boggle_game(dictionary_filename, board_filename, output_filename):
     scorepad.dedupe_and_alphabetize().write_down(output_filename)
 
 
-class BoggleBoard:
-    def __init__(self):
-        self.__boggs = []
-
-    def set_board(self, rows):
-        if len(rows) != 4:
-            raise ValueError("A Boggle board must have exactly 4 rows!")
-        if [row for row in rows if len(row) != 4]:
-            raise ValueError("Every row in Boggle must have exactly 4 letters!")
-
-        # reset boggs for a clean board
-        self.__boggs = []
-
-        # set new boggs
-        for row in rows:
-            self.__set_row(row)
-
-        print "Finished setting board:"
-        for x in range(4):
-            for y in range(4):
-                print "(%d,%d) %s" % (x, y, self.__boggs[x][y].read())
-
-        # set bogg adjacency
-        for i in range(4):
-            for j in range(4):
-                for adj_i in range(i-1, i+2):
-                    for adj_j in range(j-1, j+2):
-                        if adj_i == i and adj_j == j:
-                            continue
-                        if adj_i in range(4) and adj_j in range(4):
-                            # print "Linking (%d,%d)->(%d,%d)" % (i, j, adj_i, adj_j)
-                            self.__boggs[i][j].set_adjacent(self.__boggs[adj_i][adj_j])
-
-        print "Sanity checking adjacency:"
-        for i in range(4):
-            for j in range(4):
-                bogg = self.__boggs[i][j]
-                print "'%s' -> [%s]" % (bogg.read(), ','.join(["'%s'" % neighbor.read() for neighbor in bogg.neighbors()]))
-
-    def __set_row(self, row):
-        bogg_row = []
-        for letter in row:
-            bogg_row.append(self.__make_bogg(letter))
-        self.__boggs.append(bogg_row)
-
-    def __make_bogg(self, letter):
-        bogg = Bogg()
-        bogg.set_letter(letter)
-        return bogg
-
-
 class BogglePlayer:
-    __words_known_by_first_two_letters = {}
-    __board = BoggleBoard()
-
     _AN_INDISPENSABLE_WORD = "pirate"
+
+    def __init__(self):
+        self.__words_known_by_first_two_letters = {}
+        self.__board = BoggleBoard()
 
     def know_thy_words(self, filename):
         print "Learning words from %s..." % filename
@@ -167,7 +117,7 @@ class BogglePlayer:
         dictionary.close()
 
         if not seems_legit:
-            print "WARN: this dictionary doesn't seem to include '%s'." % self._AN_INDISPENSABLE_WORD
+            print "WARN: This dictionary doesn't seem to include '%s'." % self._AN_INDISPENSABLE_WORD
 
         print "Learned %d words (ignored %d short words)" % (learned, skipped)
 
@@ -186,7 +136,6 @@ class BogglePlayer:
     def observe_ye_board(self, filename):
         print "Looking at board from %s..." % filename
 
-        # read file and clean up whitespace, etc.
         board = open(filename)
         lines = board.readlines()
         board.close()
@@ -194,13 +143,24 @@ class BogglePlayer:
         for line in lines:
             rows.append(re.sub("[^a-zA-Z]", '', line))
 
-        # prepare the board
         print '\n'.join(rows)
         self.__board.set_board(rows)
 
     def play_boggle(self):
         print "Playing Boggle!"
+
         pad = BogglePad()
+
+        # REMOVE: take this out!
+        self.learn("jqu")
+
+        for pair in self.__consider_each_possible_pair():
+            beginning = pair.read(True)
+            print "thinking of words starting with '%s'..." % beginning
+            first_two = beginning[:2]        # different from beginning iff 'Q' is involved
+            for rest in [word[len(beginning):] for word in self.__words_i_know_starting_with(first_two) if word.startswith(beginning)]:
+                print "rest could be '%s'" % rest
+
         pad.jot("day")
         pad.jot("die")
         pad.jot("home")
@@ -208,6 +168,74 @@ class BogglePlayer:
         pad.jot("rid")
         pad.jot("way")
         return pad
+
+    def __consider_each_possible_pair(self):
+        for bogg in self.__board.boggs():
+            bogg.consider()
+            for neighbor in bogg.neighbors():
+                if not neighbor.is_considered():
+                    neighbor.consider(bogg)
+                    yield neighbor
+                    neighbor.forget()
+            bogg.forget()
+
+    def __words_i_know_starting_with(self, two_letters):
+        if not two_letters in self.__words_known_by_first_two_letters:
+            print "don't known any!"
+            return
+        for word in self.__words_known_by_first_two_letters[two_letters]:
+            yield word
+
+
+class BoggleBoard:
+    def __init__(self):
+        self.__boggs = []
+
+    def set_board(self, rows):
+        if len(rows) != 4:
+            raise ValueError("A Boggle board must have exactly 4 rows!")
+        if [row for row in rows if len(row) != 4]:
+            raise ValueError("Every row in Boggle must have exactly 4 letters!")
+
+        # clean board
+        self.__boggs = []
+
+        # set it
+        for row in rows:
+            self.__set_row(row)
+
+        # set adjacency
+        for i in range(4):
+            for j in range(4):
+                for adj_i in range(i-1, i+2):
+                    for adj_j in range(j-1, j+2):
+                        if adj_i == i and adj_j == j:
+                            continue
+                        if adj_i in range(4) and adj_j in range(4):
+                            # print "Linking (%d,%d)->(%d,%d)" % (i, j, adj_i, adj_j)
+                            self.__boggs[i][j].set_adjacent(self.__boggs[adj_i][adj_j])
+
+        # print "Sanity checking adjacency:"
+        # for i in range(4):
+        #     for j in range(4):
+        #         bogg = self.__boggs[i][j]
+        #         print "'%s' -> [%s]" % (bogg.read(), ','.join(["'%s'" % neighbor.read() for neighbor in bogg.neighbors()]))
+
+    def __set_row(self, row):
+        bogg_row = []
+        for letter in row:
+            bogg_row.append(self.__make_bogg(letter))
+        self.__boggs.append(bogg_row)
+
+    def __make_bogg(self, letter):
+        bogg = Bogg()
+        bogg.set_letter(letter)
+        return bogg
+
+    def boggs(self):
+        for row in self.__boggs:
+            for bogg in row:
+                yield bogg
 
 
 # A player's semantic representation of a tile on the Boggle board
@@ -218,12 +246,12 @@ class BogglePlayer:
 # as well as who its neighbors are and whether the player is currently 
 # considering it as part of a word.
 class Bogg:
-    __letter = ""
-    __word_part = ""
-    is_considered = False
-
     def __init__(self):
         self.__adj = []
+        self.__letter = ""
+        self.__word_part = ""
+        self.__is_considered = False
+        self.__considered_after = None
 
     def set_letter(self, letter):
         if len(letter) != 1:
@@ -233,8 +261,11 @@ class Bogg:
         if self.__word_part == "q":
             self.__word_part = "qu"
 
-    def read(self):
-        return self.__word_part
+    def read(self, include_considered_chain=False):
+        if include_considered_chain and self.__is_considered and self.__considered_after:
+            return self.__considered_after.read() + self.__word_part
+        else:
+            return self.__word_part
 
     def set_adjacent(self, bogg):
         if not bogg in self.__adj:
@@ -243,6 +274,17 @@ class Bogg:
     def neighbors(self):
         for neighbor in self.__adj:
             yield neighbor
+
+    def consider(self, previous=None):
+        self.__is_considered = True
+        self.__considered_after = previous
+
+    def is_considered(self):
+        return self.__is_considered
+
+    def forget(self):
+        self.__considered_after = None
+        self.__is_considered = False
 
 
 if __name__ == '__main__':
