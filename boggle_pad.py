@@ -30,7 +30,11 @@ class BogglePad:
 
     def write_down(self, filename):
         print "Writing to %s..." % filename
-        print self.__lines
+        output = "\n".join(self.__lines)
+        print output
+        file = open(filename, 'w')
+        file.write(output + '\n')
+        file.close()
 
 
 
