@@ -63,6 +63,8 @@ import sys
 import argparse
 import re
 
+from boggle_pad import BogglePad
+
 def main():
     args = parse_arguments()
 
@@ -85,8 +87,8 @@ def run_boggle_game(args):
     player.know_thy_words(args.dictionary_filename)
     player.observe_ye_board(args.board_filename)
 
-    scoresheet = player.play_boggle()
-    scoresheet.dedupe_and_alphabetize().write_down(args.output_filename)
+    scorepad = player.play_boggle()
+    scorepad.dedupe_and_alphabetize().write_down(args.output_filename)
 
 
 class BogglePlayer:
@@ -141,7 +143,7 @@ class BogglePlayer:
 
     def play_boggle(self):
         print "Playing Boggle!"
-        pad = Scoresheet()
+        pad = BogglePad()
         pad.jot("day")
         pad.jot("die")
         pad.jot("home")
@@ -149,28 +151,6 @@ class BogglePlayer:
         pad.jot("rid")
         pad.jot("way")
         return pad
-
-
-class Scoresheet:
-    __lines = []
-
-    def jot(self, line):
-        self.__lines.append(line)
-
-    def dedupe_and_alphabetize(self):
-        print self.__lines
-        print "Deduping..."
-        lines = list(set(self.__lines))
-        print lines
-        print "Alphabetizing..."
-        lines.sort()
-        print lines
-        self.__lines = lines
-        return self
-
-    def write_down(self, filename):
-        print "Writing answers to %s..." % filename
-        print self.__lines
 
 
 if __name__ == '__main__':
