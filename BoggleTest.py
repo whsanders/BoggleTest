@@ -68,7 +68,7 @@ from boggle_pad import BogglePad
 def main():
     args = parse_arguments()
 
-    run_boggle_game(args)
+    run_boggle_game(args.dictionary_filename, args.board_filename, args.output_filename)
 
     sys.exit(0)
 
@@ -82,17 +82,50 @@ def parse_arguments():
     return args
 
 
-def run_boggle_game(args):
+def run_boggle_game(dictionary_filename, board_filename, output_filename):
     player = BogglePlayer()
-    player.know_thy_words(args.dictionary_filename)
-    player.observe_ye_board(args.board_filename)
+    player.know_thy_words(dictionary_filename)
+    player.observe_ye_board(board_filename)
 
     scorepad = player.play_boggle()
-    scorepad.dedupe_and_alphabetize().write_down(args.output_filename)
+    scorepad.dedupe_and_alphabetize().write_down(output_filename)
+
+
+class BoggleBoard:
+    __boggs = []
+
+    def set_board(self, rows):
+        if len(rows) != 4:
+            raise ValueError("A Boggle board must have exactly 4 rows!")
+        if [row for row in rows if len(row) != 4]:
+            raise ValueError("Every row in Boggle must have exactly 4 letters!")
+
+        # reset boggs for a clean board
+        self.__boggs = []
+
+        for row in rows:
+            self.__set_row(row)
+
+        print "Finished setting board:"
+        for i in range(4):
+            for j in range(4):
+                print "(%d,%d) %s" % (i, j, self.__boggs[i][j].read())
+
+    def __set_row(self, row):
+        bogg_row = []
+        for letter in row:
+            bogg_row.append(self.__make_bogg(letter))
+        self.__boggs.append(bogg_row)
+
+    def __make_bogg(self, letter):
+        bogg = Bogg()
+        bogg.set_letter(letter)
+        return bogg
 
 
 class BogglePlayer:
     __words_known_by_first_two_letters = {}
+    __board = BoggleBoard()
 
     _AN_INDISPENSABLE_WORD = "pirate"
 
@@ -133,13 +166,18 @@ class BogglePlayer:
 
     def observe_ye_board(self, filename):
         print "Looking at board from %s..." % filename
+
+        # read file and clean up whitespace, etc.
         board = open(filename)
         lines = board.readlines()
         board.close()
         rows = []
         for line in lines:
             rows.append(re.sub("[^a-zA-Z]", '', line))
-        print rows
+
+        # prepare the board
+        print '\n'.join(rows)
+        self.__board.set_board(rows)
 
     def play_boggle(self):
         print "Playing Boggle!"
@@ -151,6 +189,40 @@ class BogglePlayer:
         pad.jot("rid")
         pad.jot("way")
         return pad
+
+
+# A player's semantic representation of a tile on the Boggle board
+#
+# (Yes, there is probably a better name.)
+#
+# A bogg knows about the tile's syntactic contribution, e.g. "Q" -> "qu",
+# as well as who its neighbors are and whether the player is currently 
+# considering it as part of a word.
+class Bogg:
+    __letter = ""
+    __word_part = ""
+    __adj = []
+    is_considered = False
+
+    def set_letter(self, letter):
+        if len(letter) != 1:
+            print "WARN: Single character expected, but received '%s'" % letter
+        self.__letter = letter
+        self.__word_part = letter.lower()
+        if self.__word_part == "q":
+            self.__word_part = "qu"
+        print 'Set word part "%s" for letter "%s"' % (self.__word_part, letter)
+
+    def read(self):
+        return self.__word_part
+
+    def set_adjacent(self, bogg):
+        if not bogg in self.__adj:
+            self.__adj.append(bogg)
+
+    def neighbors(self):
+        for neighbor in self.__adj:
+            yield neighbor
 
 
 if __name__ == '__main__':
