@@ -92,7 +92,8 @@ def run_boggle_game(dictionary_filename, board_filename, output_filename):
 
 
 class BoggleBoard:
-    __boggs = []
+    def __init__(self):
+        self.__boggs = []
 
     def set_board(self, rows):
         if len(rows) != 4:
@@ -103,13 +104,31 @@ class BoggleBoard:
         # reset boggs for a clean board
         self.__boggs = []
 
+        # set new boggs
         for row in rows:
             self.__set_row(row)
 
         print "Finished setting board:"
+        for x in range(4):
+            for y in range(4):
+                print "(%d,%d) %s" % (x, y, self.__boggs[x][y].read())
+
+        # set bogg adjacency
         for i in range(4):
             for j in range(4):
-                print "(%d,%d) %s" % (i, j, self.__boggs[i][j].read())
+                for adj_i in range(i-1, i+2):
+                    for adj_j in range(j-1, j+2):
+                        if adj_i == i and adj_j == j:
+                            continue
+                        if adj_i in range(4) and adj_j in range(4):
+                            # print "Linking (%d,%d)->(%d,%d)" % (i, j, adj_i, adj_j)
+                            self.__boggs[i][j].set_adjacent(self.__boggs[adj_i][adj_j])
+
+        print "Sanity checking adjacency:"
+        for i in range(4):
+            for j in range(4):
+                bogg = self.__boggs[i][j]
+                print "'%s' -> [%s]" % (bogg.read(), ','.join(["'%s'" % neighbor.read() for neighbor in bogg.neighbors()]))
 
     def __set_row(self, row):
         bogg_row = []
@@ -201,8 +220,10 @@ class BogglePlayer:
 class Bogg:
     __letter = ""
     __word_part = ""
-    __adj = []
     is_considered = False
+
+    def __init__(self):
+        self.__adj = []
 
     def set_letter(self, letter):
         if len(letter) != 1:
@@ -211,7 +232,6 @@ class Bogg:
         self.__word_part = letter.lower()
         if self.__word_part == "q":
             self.__word_part = "qu"
-        print 'Set word part "%s" for letter "%s"' % (self.__word_part, letter)
 
     def read(self):
         return self.__word_part
