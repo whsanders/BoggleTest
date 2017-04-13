@@ -119,13 +119,16 @@ class BogglePlayer:
         dictionary.close()
 
         if not seems_legit:
-            print "WARN: This dictionary doesn't seem to include '%s'." % self._AN_INDISPENSABLE_WORD
+            print "WARN: This dictionary doesn't seem to include '%s'" % self._AN_INDISPENSABLE_WORD
 
         print "Learned %d words (ignored %d short words)" % (learned, skipped)
 
     def learn(self, word):
         if len(word) < 3:
             return False
+
+        if len(word) > 16:
+            return True        # Whatever. We know this won't be on the exam; this helps against malicious dictionaries.
 
         key = word[:2]
         if not key in self.__words_known_by_first_two_letters:
@@ -134,6 +137,16 @@ class BogglePlayer:
             self.__words_known_by_first_two_letters[key].append(word)
 
         return True
+
+    def unlearn(self, word):
+        if len(word) < 3:
+            return
+
+        key = word[:2]
+        if not key in self.__words_known_by_first_two_letters:
+            return
+        if word in self.__words_known_by_first_two_letters[key]:
+            self.__words_known_by_first_two_letters[key].remove(word)
 
     def observe_ye_board(self, filename):
         print "Looking at board from %s..." % filename
@@ -154,14 +167,15 @@ class BogglePlayer:
         pad = BogglePad()
 
         for pair in self.__consider_each_possible_pair():
-            first_few = pair.read(True)
-            first_two = first_few[:2]        # different from first_few iff 'Q' is involved
+            first_few_letters = pair.read(True)
 
-            for candidate in self.__words_i_know_starting_with(first_two):
-                if candidate.startswith(first_few):
-                    rest_of_word = candidate[len(first_few):]
-                    if self.__can_get_there_from_here(rest_of_word, pair):
-                        pad.jot(candidate)
+            one_to_unlearn = ""
+            for candidate in self.__words_i_know_starting_with(first_few_letters):
+                rest_of_word = candidate[len(first_few_letters):]
+                if self.__can_get_there_from_here(rest_of_word, pair):
+                    pad.jot(candidate)
+                    one_to_unlearn = candidate
+            self.unlearn(one_to_unlearn)        # lazy non-critical optimization to help when many permutations of a word exist
 
         print "Jotted down %d total words" % pad.count()
         return pad
@@ -176,11 +190,17 @@ class BogglePlayer:
                     neighbor.forget()
             bogg.forget()
 
-    def __words_i_know_starting_with(self, two_letters):
+    def __words_i_know_starting_with(self, at_least_two_letters):
+        if len(at_least_two_letters) < 2:
+            print "ERROR: can't list words starting with '%s', there are just too many; I need at least two letters" % at_least_two_letters
+            return
+        two_letters = at_least_two_letters[:2]
+        two_covers_it = len(at_least_two_letters) == 2
         if not two_letters in self.__words_known_by_first_two_letters:
             return
         for word in self.__words_known_by_first_two_letters[two_letters]:
-            yield word
+            if two_covers_it or word.startswith(at_least_two_letters):
+                yield word
 
     def __can_get_there_from_here(self, rest_of_word, start_bogg):
         if rest_of_word == "":
