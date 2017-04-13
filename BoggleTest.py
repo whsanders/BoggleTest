@@ -62,7 +62,6 @@
 import sys
 import argparse
 import re
-
 from boggle_pad import BogglePad
 
 def main():
@@ -75,15 +74,17 @@ def main():
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Play Boggle.")
+
     parser.add_argument("dictionary_filename")
     parser.add_argument("board_filename")
     parser.add_argument("output_filename")
-    args = parser.parse_args()
-    return args
+
+    return parser.parse_args()
 
 
 def run_boggle_game(dictionary_filename, board_filename, output_filename):
     player = BogglePlayer()
+
     player.know_thy_words(dictionary_filename)
     player.observe_ye_board(board_filename)
 
@@ -92,6 +93,7 @@ def run_boggle_game(dictionary_filename, board_filename, output_filename):
 
 
 class BogglePlayer:
+
     _AN_INDISPENSABLE_WORD = "pirate"
 
     def __init__(self):
@@ -151,26 +153,17 @@ class BogglePlayer:
 
         pad = BogglePad()
 
-        # REMOVE: take this out!
-        self.learn("jqu")
-
         for pair in self.__consider_each_possible_pair():
-            beginning = pair.read(True)
-            print "thinking of words starting with '%s'..." % beginning
-            print "considered: " + ','.join([bogg.read() for bogg in self.__board.boggs() if bogg.is_considered()])
-            first_two = beginning[:2]        # different from beginning iff 'Q' is involved
-            for rest in [word[len(beginning):] for word in self.__words_i_know_starting_with(first_two) if word.startswith(beginning)]:
-                # print "rest could be '%s'" % rest
-                if self.__can_get_there_from_here(rest, pair):
-                    pad.jot(beginning + rest)
-            print "considered: " + ','.join([bogg.read() for bogg in self.__board.boggs() if bogg.is_considered()])
+            first_few = pair.read(True)
+            first_two = first_few[:2]        # different from first_few iff 'Q' is involved
 
-        # pad.jot("day")
-        # pad.jot("die")
-        # pad.jot("home")
-        # pad.jot("kid")
-        # pad.jot("rid")
-        # pad.jot("way")
+            for candidate in self.__words_i_know_starting_with(first_two):
+                if candidate.startswith(first_few):
+                    rest_of_word = candidate[len(first_few):]
+                    if self.__can_get_there_from_here(rest_of_word, pair):
+                        pad.jot(candidate)
+
+        print "Jotted down %d total words" % pad.count()
         return pad
 
     def __consider_each_possible_pair(self):
@@ -185,14 +178,13 @@ class BogglePlayer:
 
     def __words_i_know_starting_with(self, two_letters):
         if not two_letters in self.__words_known_by_first_two_letters:
-            print "don't known any!"
             return
         for word in self.__words_known_by_first_two_letters[two_letters]:
             yield word
 
     def __can_get_there_from_here(self, rest_of_word, start_bogg):
         if rest_of_word == "":
-            return True        # because we're already there
+            return True        # we're already there
         for next in start_bogg.neighbors():
             if not next.is_considered():
                 next_part = next.read()
@@ -206,10 +198,12 @@ class BogglePlayer:
 
 
 class BoggleBoard:
+
     def __init__(self):
         self.__boggs = []
 
     def set_board(self, rows):
+
         if len(rows) != 4:
             raise ValueError("A Boggle board must have exactly 4 rows!")
         if [row for row in rows if len(row) != 4]:
@@ -220,7 +214,7 @@ class BoggleBoard:
 
         # set it
         for row in rows:
-            self.__set_row(row)
+            self.__set_bogg_row(row)
 
         # set adjacency
         for i in range(4):
@@ -230,16 +224,9 @@ class BoggleBoard:
                         if adj_i == i and adj_j == j:
                             continue
                         if adj_i in range(4) and adj_j in range(4):
-                            # print "Linking (%d,%d)->(%d,%d)" % (i, j, adj_i, adj_j)
                             self.__boggs[i][j].set_adjacent(self.__boggs[adj_i][adj_j])
 
-        # print "Sanity checking adjacency:"
-        # for i in range(4):
-        #     for j in range(4):
-        #         bogg = self.__boggs[i][j]
-        #         print "'%s' -> [%s]" % (bogg.read(), ','.join(["'%s'" % neighbor.read() for neighbor in bogg.neighbors()]))
-
-    def __set_row(self, row):
+    def __set_bogg_row(self, row):
         bogg_row = []
         for letter in row:
             bogg_row.append(self.__make_bogg(letter))
@@ -264,6 +251,7 @@ class BoggleBoard:
 # as well as who its neighbors are and whether the player is currently 
 # considering it as part of a word.
 class Bogg:
+
     def __init__(self):
         self.__adj = []
         self.__letter = ""

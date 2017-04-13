@@ -17,19 +17,22 @@ class BogglePad:
         self.__lines.append(line)
         return self
 
+    def count(self):
+        return len(self.__lines)
+
     def dedupe_and_alphabetize(self):
-        print self.__lines
-        print "Deduping..."
+        print "Deduping...",
         lines = list(set(self.__lines))
-        print lines
+        print " %d redundant items" % (self.count() - len(lines))
+
         print "Alphabetizing..."
         lines.sort()
-        print lines
+
         self.__lines = lines
         return self
 
     def write_down(self, filename):
-        print "Writing to %s..." % filename
+        print "Writing %d items to %s..." % (self.count(), filename)
         output = "\n".join(self.__lines)
         print output
         file = open(filename, 'w')
