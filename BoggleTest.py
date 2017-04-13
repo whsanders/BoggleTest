@@ -101,6 +101,10 @@ class BogglePlayer:
         self.__board = BoggleBoard()
 
     def know_thy_words(self, filename):
+        # Learn words from a dictionary file.
+        # Reads file into memory; not tested for big files. Two letters are enough to rule
+        # out most invalid search paths entirely, so we chunk (and key) by that.
+
         print "Learning words from %s..." % filename
 
         learned = 0
