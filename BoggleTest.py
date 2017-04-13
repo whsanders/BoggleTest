@@ -157,16 +157,20 @@ class BogglePlayer:
         for pair in self.__consider_each_possible_pair():
             beginning = pair.read(True)
             print "thinking of words starting with '%s'..." % beginning
+            print "considered: " + ','.join([bogg.read() for bogg in self.__board.boggs() if bogg.is_considered()])
             first_two = beginning[:2]        # different from beginning iff 'Q' is involved
             for rest in [word[len(beginning):] for word in self.__words_i_know_starting_with(first_two) if word.startswith(beginning)]:
-                print "rest could be '%s'" % rest
+                # print "rest could be '%s'" % rest
+                if self.__can_get_there_from_here(rest, pair):
+                    pad.jot(beginning + rest)
+            print "considered: " + ','.join([bogg.read() for bogg in self.__board.boggs() if bogg.is_considered()])
 
-        pad.jot("day")
-        pad.jot("die")
-        pad.jot("home")
-        pad.jot("kid")
-        pad.jot("rid")
-        pad.jot("way")
+        # pad.jot("day")
+        # pad.jot("die")
+        # pad.jot("home")
+        # pad.jot("kid")
+        # pad.jot("rid")
+        # pad.jot("way")
         return pad
 
     def __consider_each_possible_pair(self):
@@ -185,6 +189,20 @@ class BogglePlayer:
             return
         for word in self.__words_known_by_first_two_letters[two_letters]:
             yield word
+
+    def __can_get_there_from_here(self, rest_of_word, start_bogg):
+        if rest_of_word == "":
+            return True        # because we're already there
+        for next in start_bogg.neighbors():
+            if not next.is_considered():
+                next_part = next.read()
+                if rest_of_word.startswith(next_part):
+                    next.consider(start_bogg)
+                    got_there = self.__can_get_there_from_here(rest_of_word[len(next_part):], next)
+                    next.forget()
+                    if got_there:
+                        return True
+        return False
 
 
 class BoggleBoard:
@@ -263,7 +281,7 @@ class Bogg:
 
     def read(self, include_considered_chain=False):
         if include_considered_chain and self.__is_considered and self.__considered_after:
-            return self.__considered_after.read() + self.__word_part
+            return self.__considered_after.read(True) + self.__word_part
         else:
             return self.__word_part
 
