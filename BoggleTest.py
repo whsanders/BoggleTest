@@ -175,7 +175,7 @@ class BogglePlayer:
                 if self.__can_get_there_from_here(rest_of_word, pair):
                     pad.jot(candidate)
                     one_to_unlearn = candidate
-            self.unlearn(one_to_unlearn)        # lazy non-critical optimization to help when many permutations of a word exist
+            self.unlearn(one_to_unlearn)        # Lazy non-critical optimization to help when many permutations of a word exist.
 
         print "Jotted down %d total words" % pad.count()
         return pad
