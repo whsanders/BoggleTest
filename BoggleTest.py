@@ -153,6 +153,9 @@ class BogglePlayer:
             self.__words_known_by_first_two_letters[key].remove(word)
 
     def observe_ye_board(self, filename):
+        # Setup a Boggle board from a file.
+        # If the file doesn't have exactly 4 rows of 4 characters each, this will raise a ValueError.
+
         print "Looking at board from %s..." % filename
 
         board = open(filename)
@@ -166,6 +169,15 @@ class BogglePlayer:
         self.__board.set_board(rows)
 
     def play_boggle(self):
+        # Play Boggle with a board and dictionary previously specified.
+        #
+        # For each ordered pair of adjacent "boggs", checks to see if there are known words beginning with them. If so,
+        # switches over to perform a depth-first search for each word from that point. This may be unnecessary
+        # complexity but it performs fine while demonstrating more features of the python language, which seems
+        # appropriate for this exercise.
+        #
+        # Returns: A boggle_pad.BogglePad containing the unsorted (and possibly redundant) words found during play.
+
         print "Playing Boggle!"
 
         pad = BogglePad()
@@ -185,6 +197,14 @@ class BogglePlayer:
         return pad
 
     def __consider_each_possible_pair(self):
+        # Iterates through all permutations of a first and adjacent second "bogg" on the board.
+        #
+        # This flags each bogg as being considered and is intended as the start of the consideration chain. It
+        # is NOT safe to nest or to use when a chain is going, and will break consideration badly.
+        #
+        # NOTE: If you break or return out of the loop, you are still considering the chain and are responsible for
+        # forgetting it when appropriate with Bogg.forget().
+
         for bogg in self.__board.boggs():
             bogg.consider()
             for neighbor in bogg.neighbors():
@@ -195,11 +215,15 @@ class BogglePlayer:
             bogg.forget()
 
     def __words_i_know_starting_with(self, at_least_two_letters):
+        # Iterates through known words that start with the given string.
+        #
+        # Complains and throws up its hands (but does not raise an exception) if the starting string isn't at least 2 characters long.
+
         if len(at_least_two_letters) < 2:
             print "ERROR: can't list words starting with '%s', there are just too many; I need at least two letters" % at_least_two_letters
             return
         two_letters = at_least_two_letters[:2]
-        two_covers_it = len(at_least_two_letters) == 2
+        two_covers_it = len(at_least_two_letters) == 2        # Can we skip an explicit check later because we got exactly 2?
         if not two_letters in self.__words_known_by_first_two_letters:
             return
         for word in self.__words_known_by_first_two_letters[two_letters]:
@@ -207,6 +231,9 @@ class BogglePlayer:
                 yield word
 
     def __can_get_there_from_here(self, rest_of_word, start_bogg):
+        # Search recursively for a string from the given consideration chain.
+        #
+        # You must mark start_bogg as considered yourself; this does not assume it can safely do it for you.
         if rest_of_word == "":
             return True        # we're already there
         for next in start_bogg.neighbors():
@@ -227,6 +254,7 @@ class BoggleBoard:
         self.__boggs = []
 
     def set_board(self, rows):
+        # Initialize board state given a 4x4 array of characters.
 
         if len(rows) != 4:
             raise ValueError("A Boggle board must have exactly 4 rows!")
@@ -292,27 +320,38 @@ class Bogg:
             self.__word_part = "qu"
 
     def read(self, include_considered_chain=False):
+        # Reads from the bogg or, optionally, a consideration chain it terminates.
+
         if include_considered_chain and self.__is_considered and self.__considered_after:
             return self.__considered_after.read(True) + self.__word_part
         else:
             return self.__word_part
 
     def set_adjacent(self, bogg):
+        # Tells the bogg about a neighbor.
         if not bogg in self.__adj:
             self.__adj.append(bogg)
 
     def neighbors(self):
+        # Iterates through the bogg's adjacent neighbors.
+
         for neighbor in self.__adj:
             yield neighbor
 
     def consider(self, previous=None):
+        # Marks the bogg as being considered in a word.
+
         self.__is_considered = True
         self.__considered_after = previous
 
     def is_considered(self):
+        # Returns True if the bogg is being considered in a solution.
+
         return self.__is_considered
 
     def forget(self):
+        # Marks the bogg as no longer being considered.
+
         self.__considered_after = None
         self.__is_considered = False
 
